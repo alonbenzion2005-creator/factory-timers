@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0b10" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Factory Timers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Setup overlay shown when Firebase config is missing -->
+  <div id="setup" class="setup hidden">
+    <div class="setup-card">
+      <h1>⏱ Factory Timers</h1>
+      <p>One quick step before the two phones can sync. Open <code>config.js</code> and paste your free Firebase config.</p>
+      <ol>
+        <li>Go to <b>console.firebase.google.com</b> → <b>Add project</b> (free).</li>
+        <li>In the project, open <b>Build → Realtime Database</b> → <b>Create database</b> → start in <b>test mode</b>.</li>
+        <li>Project settings (⚙) → <b>Your apps</b> → add a <b>Web app</b> → copy the <code>firebaseConfig</code> object.</li>
+        <li>Paste it into <code>config.js</code> and reload. Full steps are in <code>README.md</code>.</li>
+      </ol>
+      <p class="muted">Both phones just open the same URL. That's it.</p>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">⏱</span>
+      <span class="brand-name">Factory Timers</span>
+    </div>
+    <div class="topbar-right">
+      <button id="roomBtn" class="room-chip" title="Shared room — both phones must match">
+        <span class="room-dot"></span>
+        <span id="roomLabel">room</span>
+      </button>
+      <span id="status" class="status" title="Connection">
+        <span class="status-dot"></span>
+      </span>
+    </div>
+  </header>
+
+  <main id="grid" class="grid"></main>
+
+  <div id="empty" class="empty hidden">
+    <div class="empty-inner">
+      <div class="empty-emoji">🕓</div>
+      <p>No timers yet.</p>
+      <p class="muted">Tap the <b>+</b> button to create your first shared timer.</p>
+    </div>
+  </div>
+
+  <button id="addBtn" class="fab" title="Add timer" aria-label="Add timer">+</button>
+
+  <!-- Editor modal -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-sheet">
+      <div class="modal-head">
+        <h2 id="modalTitle">New timer</h2>
+        <button id="modalClose" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+
+      <label class="field">
+        <span>Name</span>
+        <input id="fName" type="text" maxlength="28" placeholder="e.g. Line A bake" autocomplete="off" />
+      </label>
+
+      <div class="field">
+        <span>Duration</span>
+        <div class="time-inputs">
+          <div class="ti"><input id="fH" type="number" min="0" max="99" inputmode="numeric" placeholder="0" /><label>hrs</label></div>
+          <div class="sep">:</div>
+          <div class="ti"><input id="fM" type="number" min="0" max="59" inputmode="numeric" placeholder="05" /><label>min</label></div>
+          <div class="sep">:</div>
+          <div class="ti"><input id="fS" type="number" min="0" max="59" inputmode="numeric" placeholder="00" /><label>sec</label></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <span>Color</span>
+        <div id="swatches" class="swatches"></div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="deleteBtn" class="btn btn-ghost btn-danger hidden">Delete</button>
+        <div class="spacer"></div>
+        <button id="saveBtn" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Room modal -->
+  <div id="roomModal" class="modal hidden">
+    <div class="modal-sheet">
+      <div class="modal-head">
+        <h2>Shared room</h2>
+        <button id="roomClose" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <p class="muted small">Both phones must use the <b>same room name</b> to see the same timers. Pick anything — it's your private channel.</p>
+      <label class="field">
+        <span>Room name</span>
+        <input id="roomInput" type="text" maxlength="32" placeholder="factory" autocomplete="off" />
+      </label>
+      <div class="modal-actions">
+        <div class="spacer"></div>
+        <button id="roomSave" class="btn btn-primary">Switch room</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

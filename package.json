@@ -1,0 +1,16 @@
+{
+  "name": "factory-timers",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Shared real-time timer board for multiple phones.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.5"
+  }
+}

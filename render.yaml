@@ -1,0 +1,18 @@
+# Render Blueprint — tells Render how to build & run the app.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# When you create a "Blueprint" service from your GitHub repo, Render reads this
+# file. The DATABASE_URL is left blank here (sync: false) so Render prompts you
+# to paste your Neon connection string instead of storing a secret in git.
+
+services:
+  - type: web
+    name: factory-timers
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
