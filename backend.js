@@ -58,13 +58,14 @@ function makeLocal() {
           offset = msg.serverTime - Date.now();
           setOnline(true);
         }
-        if (msg.type === "state") cb(msg.timers || {});
+        if (msg.type === "state") cb(msg.timers || {}, { count: msg.count || 0 });
       };
       return () => es.close();
     },
     create(room, data) { return post(room, { op: "create", data }); },
     update(room, id, patch) { return post(room, { op: "update", id, patch }); },
     remove(room, id) { return post(room, { op: "remove", id }); },
+    resetCount(room) { return post(room, { op: "resetCount" }); },
   };
 }
 

@@ -64,7 +64,27 @@ function fmt(ms) {
    ────────────────────────────────────────────────────────────── */
 function subscribe() {
   if (unsubscribe) unsubscribe();
-  unsubscribe = be.subscribe(room, (data) => { timers = data || {}; render(); });
+  unsubscribe = be.subscribe(room, (data, extra) => {
+    timers = data || {};
+    if (extra && typeof extra.count === "number") setCount(extra.count);
+    render();
+  });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   "Parts made by now" counter (server feature → only in local mode)
+   ────────────────────────────────────────────────────────────── */
+const counterEl = document.getElementById("counter");
+const countValEl = document.getElementById("countVal");
+const supportsCounter = be.mode === "local";
+
+function setCount(n) { countValEl.textContent = n; }
+
+if (supportsCounter) {
+  counterEl.classList.remove("hidden");
+  counterEl.addEventListener("click", () => {
+    if (confirm("Reset the parts count to 0 for this room?")) be.resetCount(room);
+  });
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -149,7 +169,9 @@ function tick() {
     const rem = remainingMs(t);
     const dur = t.duration || 1;
     const running = t.state === "running";
-    const done = running && rem <= 0;
+    // "done" can come from the server (state set when it counts the part) or
+    // be detected locally the instant a running timer crosses zero.
+    const done = t.state === "done" || (running && rem <= 0);
 
     e.time.textContent = fmt(rem);
     e.bar.style.transform = `scaleX(${Math.max(0, Math.min(1, rem / dur))})`;
@@ -325,10 +347,86 @@ document.getElementById("roomSave").addEventListener("click", () => {
   for (const id of Object.keys(els)) { els[id].card.remove(); delete els[id]; }
   alarmed.clear();
   timers = {};
+  setCount(0);
   subscribe();
+  if (Notification?.permission === "granted") subscribePush().catch(() => {});
 });
+
+/* ──────────────────────────────────────────────────────────────
+   Push notifications — ring even when the app is closed.
+   Only available when served by our server (local mode) over HTTPS.
+   ────────────────────────────────────────────────────────────── */
+const bellBtn = document.getElementById("bellBtn");
+let vapidKey = null;
+
+function urlB64ToUint8Array(b64) {
+  const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+  const base = (b64 + pad).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
+function updateBell() {
+  if (!vapidKey) { bellBtn.classList.add("hidden"); return; }
+  bellBtn.classList.remove("hidden");
+  const on = "Notification" in window && Notification.permission === "granted";
+  bellBtn.textContent = on ? "🔔" : "🔕";
+  bellBtn.classList.toggle("on", on);
+  bellBtn.title = on
+    ? "Background alerts are on — tap to re-check"
+    : "Turn on alerts so timers ring even when the app is closed";
+}
+
+async function subscribePush() {
+  if (!vapidKey || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlB64ToUint8Array(vapidKey),
+    });
+  }
+  await fetch("/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ room, sub }),
+  });
+}
+
+async function enableNotifications() {
+  if (!("Notification" in window)) { alert("This browser can't show notifications."); return; }
+  if (Notification.permission === "denied") {
+    alert("Notifications are blocked. Enable them for this site in your phone's settings, then tap the bell again.");
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm === "granted") {
+    try { await subscribePush(); } catch (e) { console.warn("push subscribe failed", e); }
+  }
+  updateBell();
+}
+
+bellBtn.addEventListener("click", enableNotifications);
+
+async function setupPush() {
+  if (be.mode !== "local") return;            // no server to push from
+  try {
+    const r = await fetch("/vapidPublicKey");
+    if (r.ok) { const k = (await r.text()).trim(); if (k) vapidKey = k; }
+  } catch { /* push unavailable */ }
+  updateBell();
+  // If already granted on a previous visit, refresh the subscription silently
+  // (also re-points it at the current room).
+  if (vapidKey && "Notification" in window && Notification.permission === "granted") {
+    subscribePush().catch(() => {});
+  }
+}
 
 /* ──────────────────────────────────────────────────────────────
    Go
    ────────────────────────────────────────────────────────────── */
 subscribe();
+setupPush();

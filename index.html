@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0a0b10" />
-  <title>Factory Timers</title>
+  <title>Dudi Timer</title>
 
   <!-- Installable app (PWA) -->
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Timers" />
+  <meta name="apple-mobile-web-app-title" content="Dudi Timer" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -25,7 +25,7 @@
   <!-- Setup overlay shown when Firebase config is missing -->
   <div id="setup" class="setup hidden">
     <div class="setup-card">
-      <h1>⏱ Factory Timers</h1>
+      <h1>⏱ Dudi Timer</h1>
       <p>One quick step before the two phones can sync. Open <code>config.js</code> and paste your free Firebase config.</p>
       <ol>
         <li>Go to <b>console.firebase.google.com</b> → <b>Add project</b> (free).</li>
@@ -40,9 +40,10 @@
   <header class="topbar">
     <div class="brand">
       <span class="logo">⏱</span>
-      <span class="brand-name">Factory Timers</span>
+      <span class="brand-name">Dudi Timer</span>
     </div>
     <div class="topbar-right">
+      <button id="bellBtn" class="bell-btn hidden" title="Get alerted when a timer ends, even with the app closed">🔕</button>
       <button id="roomBtn" class="room-chip" title="Shared room — both phones must match">
         <span class="room-dot"></span>
         <span id="roomLabel">room</span>
@@ -52,6 +53,11 @@
       </span>
     </div>
   </header>
+
+  <div id="counter" class="counter hidden" title="Tap to reset the count">
+    <span class="counter-label">Parts made by now:</span>
+    <span id="countVal" class="counter-val">0</span>
+  </div>
 
   <main id="grid" class="grid"></main>
 

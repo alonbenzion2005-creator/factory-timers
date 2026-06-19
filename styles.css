@@ -87,6 +87,18 @@ body {
 #roomLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .room-dot { width: 8px; height: 8px; border-radius: 50%; background: #5e7cff; box-shadow: 0 0 8px #5e7cff; flex: 0 0 auto; }
 
+.bell-btn {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 16px;
+  width: 38px; height: 38px;
+  border-radius: 999px;
+  cursor: pointer;
+  line-height: 1;
+}
+.bell-btn:active { transform: scale(0.92); }
+.bell-btn.on { border-color: color-mix(in srgb, var(--ok) 55%, var(--line)); box-shadow: 0 0 12px -2px var(--ok); }
+
 .status { display: inline-flex; padding: 6px; }
 .status-dot {
   width: 11px; height: 11px; border-radius: 50%;
@@ -95,6 +107,42 @@ body {
 }
 .status.online .status-dot { background: var(--ok); box-shadow: 0 0 10px var(--ok); }
 .status.offline .status-dot { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
+
+/* ---------- Parts counter ---------- */
+.counter {
+  max-width: 880px;
+  margin: 14px auto 0;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ok) 10%, var(--panel)), var(--panel));
+  border: 1px solid color-mix(in srgb, var(--ok) 28%, var(--line));
+  border-radius: 16px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.counter:active { transform: scale(0.99); }
+.counter-label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  text-transform: none;
+}
+.counter-val {
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 1;
+  color: color-mix(in srgb, var(--ok) 45%, #fff);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--ok) 45%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 620px) { .counter { margin-top: 18px; } }
+.counter.hidden { display: none; }
 
 /* ---------- Grid ---------- */
 .grid {

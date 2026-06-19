@@ -1,9 +1,9 @@
 {
-  "name": "factory-timers",
-  "version": "1.0.0",
+  "name": "dudi-timer",
+  "version": "1.1.0",
   "private": true,
   "type": "commonjs",
-  "description": "Shared real-time timer board for multiple phones.",
+  "description": "Shared real-time timer board with push alerts and a parts counter.",
   "engines": {
     "node": ">=18"
   },
@@ -11,6 +11,7 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "pg": "^8.11.5"
+    "pg": "^8.11.5",
+    "web-push": "^3.6.7"
   }
 }

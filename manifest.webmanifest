@@ -1,7 +1,7 @@
 {
-  "name": "Factory Timers",
-  "short_name": "Timers",
-  "description": "Shared real-time timers for the factory floor.",
+  "name": "Dudi Timer",
+  "short_name": "Dudi Timer",
+  "description": "Shared real-time timers with background alerts and a parts counter.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
