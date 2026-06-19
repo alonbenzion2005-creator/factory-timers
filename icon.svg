@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1f30"/>
+      <stop offset="1" stop-color="#0a0b10"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9db0ff"/>
+      <stop offset="1" stop-color="#5e7cff"/>
+    </linearGradient>
+    <radialGradient id="face" cx="0.5" cy="0.4" r="0.75">
+      <stop offset="0" stop-color="#1d2333"/>
+      <stop offset="1" stop-color="#0c0e16"/>
+    </radialGradient>
+  </defs>
+
+  <!-- full-bleed background (also serves as the maskable safe area) -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="300" r="185" fill="#5e7cff" opacity="0.12"/>
+
+  <!-- stopwatch stem + top button -->
+  <rect x="230" y="86" width="52" height="44" rx="16" fill="url(#ring)"/>
+  <rect x="246" y="58" width="20" height="40" rx="10" fill="#9db0ff"/>
+
+  <!-- body -->
+  <circle cx="256" cy="300" r="150" fill="url(#face)" stroke="url(#ring)" stroke-width="20"/>
+
+  <!-- green progress accent arc over the top -->
+  <path d="M256 158 A142 142 0 0 1 392 318" fill="none" stroke="#2ee6a6"
+        stroke-width="14" stroke-linecap="round" opacity="0.95"/>
+
+  <!-- major tick marks -->
+  <g stroke="#5d6377" stroke-width="9" stroke-linecap="round">
+    <line x1="256" y1="172" x2="256" y2="196"/>
+    <line x1="256" y1="404" x2="256" y2="428"/>
+    <line x1="128" y1="300" x2="152" y2="300"/>
+    <line x1="360" y1="300" x2="384" y2="300"/>
+  </g>
+
+  <!-- hands -->
+  <line x1="256" y1="300" x2="256" y2="200" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+  <line x1="256" y1="300" x2="330" y2="338" stroke="#5e7cff" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="256" cy="300" r="16" fill="#ffffff"/>
+  <circle cx="256" cy="300" r="6" fill="#5e7cff"/>
+</svg>
