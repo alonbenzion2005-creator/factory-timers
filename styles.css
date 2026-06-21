@@ -87,6 +87,22 @@ body {
 #roomLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .room-dot { width: 8px; height: 8px; border-radius: 50%; background: #5e7cff; box-shadow: 0 0 8px #5e7cff; flex: 0 0 auto; }
 
+.op-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.op-chip:active { transform: scale(0.96); }
+.op-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--op, #5e7cff); box-shadow: 0 0 8px var(--op, #5e7cff); flex: 0 0 auto; }
+
 .bell-btn {
   border: 1px solid var(--line);
   background: var(--panel);
@@ -112,19 +128,30 @@ body {
 .counter {
   max-width: 880px;
   margin: 14px auto 0;
-  padding: 14px 18px;
+  padding: 8px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
+  align-items: stretch;
+  gap: 8px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--ok) 10%, var(--panel)), var(--panel));
   border: 1px solid color-mix(in srgb, var(--ok) 28%, var(--line));
   border-radius: 16px;
-  cursor: pointer;
-  -webkit-user-select: none;
-  user-select: none;
 }
-.counter:active { transform: scale(0.99); }
+.count-main {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  background: transparent; border: none; cursor: pointer;
+  padding: 8px 12px; border-radius: 12px; color: inherit; font-family: inherit;
+}
+.count-main:active { transform: scale(0.99); }
+.daylog-btn {
+  flex: 0 0 auto;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: inherit; font-weight: 700; font-size: 13px;
+  padding: 0 14px; border-radius: 12px; cursor: pointer;
+}
+.daylog-btn:active { transform: scale(0.96); }
 .counter-label {
   font-size: 14px;
   font-weight: 700;
@@ -295,6 +322,85 @@ body {
   color: var(--muted);
   border: 1px solid var(--line);
 }
+
+/* ---------- Per-part change log ---------- */
+.cardlog {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cardlog.empty { display: none; }
+.logrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.logrow .who { font-weight: 800; color: var(--op, #5e7cff); }
+.logrow .act { color: var(--text); font-weight: 600; }
+.logrow .when { margin-left: auto; font-family: "JetBrains Mono", monospace; color: var(--muted-2); font-size: 12px; }
+.logrow.first .act { color: #fff; }
+
+/* ---------- Operator picker ---------- */
+.op-choices { display: flex; flex-direction: column; gap: 12px; }
+.op-choice {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 17px; font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+}
+.op-choice:active { transform: scale(0.98); }
+.op-choice.sel { border-color: var(--oc); box-shadow: 0 0 0 1px var(--oc), 0 0 18px -4px var(--oc); }
+.op-choice .swatch-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--oc); box-shadow: 0 0 10px var(--oc); }
+
+/* ---------- Day log ---------- */
+.logsheet { max-width: 520px; max-height: 88vh; display: flex; flex-direction: column; }
+.lognav { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.nav-btn {
+  width: 40px; height: 40px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--panel);
+  color: var(--text); font-size: 22px; cursor: pointer; line-height: 1;
+}
+.nav-btn:disabled { opacity: 0.35; cursor: default; }
+.logdate { flex: 1; text-align: center; font-weight: 800; font-size: 15px; }
+.logsummary { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.sumcard {
+  flex: 1; min-width: 120px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px 14px;
+}
+.sumcard .sumname { font-weight: 800; font-size: 13px; color: var(--sc2, var(--text)); display: flex; align-items: center; gap: 7px; }
+.sumcard .sumname .d { width: 9px; height: 9px; border-radius: 50%; background: var(--sc2, #5e7cff); box-shadow: 0 0 8px var(--sc2, #5e7cff); }
+.sumcard .sumbig { font-family: "JetBrains Mono", monospace; font-weight: 800; font-size: 26px; margin-top: 4px; }
+.sumcard .sumsub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.loglist { overflow-y: auto; display: flex; flex-direction: column; gap: 2px; -webkit-overflow-scrolling: touch; }
+.logitem {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 12px; border-radius: 12px;
+}
+.logitem:nth-child(odd) { background: var(--panel); }
+.logitem .lt { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--muted); flex: 0 0 auto; }
+.logitem .lwho { font-weight: 800; flex: 0 0 auto; }
+.logitem .lpart { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.logitem .lact {
+  margin-left: auto; flex: 0 0 auto;
+  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 3px 9px; border-radius: 999px;
+  background: var(--panel-2); color: var(--muted); border: 1px solid var(--line);
+}
+.logitem .lact.finished { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+.logitem .lact.started { color: #5e7cff; border-color: color-mix(in srgb, #5e7cff 40%, var(--line)); }
+.logitem .lact.deleted { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); }
+.logempty { text-align: center; color: var(--muted); padding: 30px 0; }
 
 /* ---------- FAB ---------- */
 .fab {

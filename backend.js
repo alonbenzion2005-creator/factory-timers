@@ -62,10 +62,13 @@ function makeLocal() {
       };
       return () => es.close();
     },
-    create(room, data) { return post(room, { op: "create", data }); },
-    update(room, id, patch) { return post(room, { op: "update", id, patch }); },
-    remove(room, id) { return post(room, { op: "remove", id }); },
-    resetCount(room) { return post(room, { op: "resetCount" }); },
+    create(room, data, meta) { return post(room, { op: "create", data, by: meta?.by, action: meta?.action }); },
+    update(room, id, patch, meta) { return post(room, { op: "update", id, patch, by: meta?.by, action: meta?.action }); },
+    remove(room, id, meta) { return post(room, { op: "remove", id, by: meta?.by, action: meta?.action }); },
+    resetCount(room, meta) { return post(room, { op: "resetCount", by: meta?.by }); },
+    log(room, since, until) {
+      return fetch(`/log?room=${encodeURIComponent(room)}&since=${since}&until=${until}`).then((r) => r.json());
+    },
   };
 }
 

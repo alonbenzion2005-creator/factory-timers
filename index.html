@@ -43,6 +43,10 @@
       <span class="brand-name">Dudi Timer</span>
     </div>
     <div class="topbar-right">
+      <button id="opBtn" class="op-chip hidden" title="Who is operating">
+        <span class="op-dot"></span>
+        <span id="opLabel">Alon</span>
+      </button>
       <button id="bellBtn" class="bell-btn hidden" title="Get alerted when a timer ends, even with the app closed">🔕</button>
       <button id="roomBtn" class="room-chip" title="Shared room — both phones must match">
         <span class="room-dot"></span>
@@ -54,9 +58,12 @@
     </div>
   </header>
 
-  <div id="counter" class="counter hidden" title="Tap to reset the count">
-    <span class="counter-label">Parts made by now:</span>
-    <span id="countVal" class="counter-val">0</span>
+  <div id="counter" class="counter hidden">
+    <button id="countReset" class="count-main" title="Tap to reset the count">
+      <span class="counter-label">Parts made by now:</span>
+      <span id="countVal" class="counter-val">0</span>
+    </button>
+    <button id="logBtn" class="daylog-btn" title="See everything that happened today">📋 Day log</button>
   </div>
 
   <main id="grid" class="grid"></main>
@@ -105,6 +112,35 @@
         <div class="spacer"></div>
         <button id="saveBtn" class="btn btn-primary">Save</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Operator picker modal -->
+  <div id="opModal" class="modal hidden">
+    <div class="modal-sheet">
+      <div class="modal-head">
+        <h2>Who's operating?</h2>
+        <button id="opClose" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <p class="muted small">Pick your name. Everything you do to a timer gets logged under it.</p>
+      <div id="opChoices" class="op-choices"></div>
+    </div>
+  </div>
+
+  <!-- Day log modal -->
+  <div id="logModal" class="modal hidden">
+    <div class="modal-sheet logsheet">
+      <div class="modal-head">
+        <h2>Day Log</h2>
+        <button id="logClose" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <div class="lognav">
+        <button id="logPrev" class="nav-btn" aria-label="Previous day">‹</button>
+        <div id="logDateLabel" class="logdate">Today</div>
+        <button id="logNext" class="nav-btn" aria-label="Next day">›</button>
+      </div>
+      <div id="logSummary" class="logsummary"></div>
+      <div id="logList" class="loglist"></div>
     </div>
   </div>
 

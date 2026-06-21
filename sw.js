@@ -1,7 +1,7 @@
 // Service worker — lets the app install, load offline, and ring in the
 // background via push notifications.
 // Bump CACHE when you change the cached files to force an update.
-const CACHE = "dt-v2";
+const CACHE = "dt-v3";
 const ASSETS = [
   "/", "/index.html", "/styles.css", "/app.js", "/backend.js", "/config.js",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",

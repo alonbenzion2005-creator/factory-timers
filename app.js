@@ -31,6 +31,18 @@ let unsubscribe = null;
 document.getElementById("roomLabel").textContent = room;
 
 /* ──────────────────────────────────────────────────────────────
+   Operators (who is using this phone)
+   ────────────────────────────────────────────────────────────── */
+const OPERATORS = ["Alon", "Aviv"];
+const OP_COLORS = { Alon: "#5e7cff", Aviv: "#ffb13d" };
+const opColor = (name) => OP_COLORS[name] || "#8a90a6";
+const supportsLog = be.mode === "local"; // operators/log are server features
+
+let operator = localStorage.getItem("dt_operator");
+if (!OPERATORS.includes(operator)) operator = OPERATORS[0];
+const meta = () => ({ by: operator });
+
+/* ──────────────────────────────────────────────────────────────
    State
    ────────────────────────────────────────────────────────────── */
 let timers = {};            // id -> data
@@ -68,6 +80,7 @@ function subscribe() {
     timers = data || {};
     if (extra && typeof extra.count === "number") setCount(extra.count);
     render();
+    maybeRefreshLog();
   });
 }
 
@@ -76,15 +89,19 @@ function subscribe() {
    ────────────────────────────────────────────────────────────── */
 const counterEl = document.getElementById("counter");
 const countValEl = document.getElementById("countVal");
-const supportsCounter = be.mode === "local";
 
 function setCount(n) { countValEl.textContent = n; }
 
-if (supportsCounter) {
+if (supportsLog) {
   counterEl.classList.remove("hidden");
-  counterEl.addEventListener("click", () => {
-    if (confirm("Reset the parts count to 0 for this room?")) be.resetCount(room);
+  document.getElementById("countReset").addEventListener("click", () => {
+    if (confirm("Reset the parts count to 0 for this room?")) be.resetCount(room, { by: operator });
   });
+}
+
+/* Time-of-day helper for logs */
+function fmtClock(ts) {
+  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -130,7 +147,8 @@ function buildCard(id) {
     <div class="controls">
       <button class="btn btn-play">Start</button>
       <button class="btn btn-reset">Reset</button>
-    </div>`;
+    </div>
+    <div class="cardlog empty"></div>`;
 
   const refs = {
     card,
@@ -142,6 +160,7 @@ function buildCard(id) {
     play: card.querySelector(".btn-play"),
     reset: card.querySelector(".btn-reset"),
     edit: card.querySelector(".edit-btn"),
+    log: card.querySelector(".cardlog"),
   };
 
   refs.play.addEventListener("click", () => toggle(id));
@@ -156,6 +175,25 @@ function paintCard(id, t) {
   e.name.textContent = t.name || "Timer";
   e.play.textContent = t.state === "running" ? "Pause" : "Start";
   e.play.classList.toggle("btn-pause", t.state === "running");
+  renderCardLog(e.log, t);
+}
+
+// The little "who changed it" history under each part.
+function renderCardLog(box, t) {
+  const entries = (t.log || []).slice(0, 4);
+  if (!supportsLog || entries.length === 0) { box.classList.add("empty"); box.innerHTML = ""; return; }
+  box.classList.remove("empty");
+  box.innerHTML = entries.map((ev, i) => `
+    <div class="logrow${i === 0 ? " first" : ""}" style="--op:${opColor(ev.by)}">
+      <span class="who">${escapeHtml(ev.by)}</span>
+      <span class="act">${escapeHtml(ev.action)}</span>
+      <span class="when">${fmtClock(ev.ts)}</span>
+    </div>`).join("");
+}
+
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -223,11 +261,11 @@ function toggle(id) {
   const t = timers[id];
   if (!t) return;
   if (t.state === "running") {
-    be.update(room, id, { state: "paused", remaining: remainingMs(t), endAt: null });
+    be.update(room, id, { state: "paused", remaining: remainingMs(t), endAt: null }, { by: operator, action: "paused" });
   } else {
     let rem = remainingMs(t);
     if (rem <= 0) rem = t.duration || 0;          // restart a finished timer
-    be.update(room, id, { state: "running", endAt: serverNow() + rem, remaining: null });
+    be.update(room, id, { state: "running", endAt: serverNow() + rem, remaining: null }, { by: operator, action: "started" });
   }
 }
 
@@ -235,7 +273,7 @@ function resetTimer(id) {
   const t = timers[id];
   if (!t) return;
   alarmed.delete(id);
-  be.update(room, id, { state: "idle", remaining: t.duration || 0, endAt: null });
+  be.update(room, id, { state: "idle", remaining: t.duration || 0, endAt: null }, { by: operator, action: "reset" });
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -301,20 +339,20 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     const t = timers[editingId];
     const patch = { name, color: chosenColor, duration };
     if (t.state !== "running") { patch.remaining = duration; patch.state = "idle"; }
-    be.update(room, editingId, patch);
+    be.update(room, editingId, patch, { by: operator, action: "edited" });
     alarmed.delete(editingId);
   } else {
     be.create(room, {
       name, color: chosenColor, duration,
       state: "idle", remaining: duration, endAt: null,
-    });
+    }, { by: operator, action: "created" });
   }
   closeEditor();
 });
 
 deleteBtn.addEventListener("click", () => {
   if (editingId && confirm("Delete this timer for both phones?")) {
-    be.remove(room, editingId);
+    be.remove(room, editingId, { by: operator, action: "deleted" });
     closeEditor();
   }
 });
@@ -351,6 +389,118 @@ document.getElementById("roomSave").addEventListener("click", () => {
   subscribe();
   if (Notification?.permission === "granted") subscribePush().catch(() => {});
 });
+
+/* ──────────────────────────────────────────────────────────────
+   Operator picker
+   ────────────────────────────────────────────────────────────── */
+const opBtn = document.getElementById("opBtn");
+const opModal = document.getElementById("opModal");
+const opChoices = document.getElementById("opChoices");
+
+function paintOperator() {
+  document.getElementById("opLabel").textContent = operator;
+  opBtn.style.setProperty("--op", opColor(operator));
+}
+
+if (supportsLog) {
+  opBtn.classList.remove("hidden");
+  paintOperator();
+  OPERATORS.forEach((name) => {
+    const b = document.createElement("button");
+    b.className = "op-choice";
+    b.style.setProperty("--oc", opColor(name));
+    b.innerHTML = `<span class="swatch-dot"></span>${name}`;
+    b.addEventListener("click", () => {
+      operator = name;
+      localStorage.setItem("dt_operator", name);
+      paintOperator();
+      opModal.classList.add("hidden");
+    });
+    opChoices.appendChild(b);
+  });
+  opBtn.addEventListener("click", () => {
+    [...opChoices.children].forEach((c, i) => c.classList.toggle("sel", OPERATORS[i] === operator));
+    opModal.classList.remove("hidden");
+  });
+  document.getElementById("opClose").addEventListener("click", () => opModal.classList.add("hidden"));
+  opModal.addEventListener("click", (e) => { if (e.target === opModal) opModal.classList.add("hidden"); });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Day log
+   ────────────────────────────────────────────────────────────── */
+const logModal = document.getElementById("logModal");
+const logList = document.getElementById("logList");
+const logSummary = document.getElementById("logSummary");
+const logDateLabel = document.getElementById("logDateLabel");
+const logPrev = document.getElementById("logPrev");
+const logNext = document.getElementById("logNext");
+
+const DAY = 86400000;
+const startOfDay = (ms) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); };
+let logDay = startOfDay(Date.now());
+let logOpen = false;
+
+const ACTION_CLASS = { finished: "finished", started: "started", deleted: "deleted" };
+
+function dayLabel(ms) {
+  const today = startOfDay(Date.now());
+  if (ms === today) return "Today";
+  if (ms === today - DAY) return "Yesterday";
+  return new Date(ms).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+}
+
+async function loadDayLog() {
+  if (!supportsLog) return;
+  const since = logDay, until = logDay + DAY - 1;
+  logDateLabel.textContent = dayLabel(logDay);
+  logNext.disabled = logDay >= startOfDay(Date.now());
+  let data;
+  try { data = await be.log(room, since, until); } catch { logList.innerHTML = `<div class="logempty">Couldn't load the log.</div>`; return; }
+  const evs = (data.events || []).slice().reverse(); // newest first
+
+  // Summary: parts finished + actions per operator
+  const stats = {};
+  for (const name of OPERATORS) stats[name] = { finished: 0, actions: 0 };
+  for (const ev of data.events || []) {
+    if (!stats[ev.by]) stats[ev.by] = { finished: 0, actions: 0 };
+    stats[ev.by].actions++;
+    if (ev.action === "finished") stats[ev.by].finished++;
+  }
+  logSummary.innerHTML = OPERATORS.map((name) => `
+    <div class="sumcard" style="--sc2:${opColor(name)}">
+      <div class="sumname"><span class="d"></span>${escapeHtml(name)}</div>
+      <div class="sumbig">${stats[name].finished}</div>
+      <div class="sumsub">parts · ${stats[name].actions} actions</div>
+    </div>`).join("");
+
+  logList.innerHTML = evs.length
+    ? evs.map((ev) => `
+      <div class="logitem">
+        <span class="lt">${fmtClock(ev.ts)}</span>
+        <span class="lwho" style="color:${opColor(ev.by)}">${escapeHtml(ev.by)}</span>
+        <span class="lpart">${escapeHtml(ev.timerName || "—")}</span>
+        <span class="lact ${ACTION_CLASS[ev.action] || ""}">${escapeHtml(ev.action)}</span>
+      </div>`).join("")
+    : `<div class="logempty">Nothing logged for this day yet.</div>`;
+}
+
+function maybeRefreshLog() {
+  if (logOpen && logDay === startOfDay(Date.now())) loadDayLog();
+}
+
+if (supportsLog) {
+  document.getElementById("logBtn").addEventListener("click", () => {
+    logDay = startOfDay(Date.now());
+    logOpen = true;
+    logModal.classList.remove("hidden");
+    loadDayLog();
+  });
+  document.getElementById("logClose").addEventListener("click", () => { logOpen = false; logModal.classList.add("hidden"); });
+  logModal.addEventListener("click", (e) => { if (e.target === logModal) { logOpen = false; logModal.classList.add("hidden"); } });
+  logPrev.addEventListener("click", () => { logDay -= DAY; loadDayLog(); });
+  logNext.addEventListener("click", () => { if (logDay < startOfDay(Date.now())) { logDay += DAY; loadDayLog(); } });
+}
 
 /* ──────────────────────────────────────────────────────────────
    Push notifications — ring even when the app is closed.
