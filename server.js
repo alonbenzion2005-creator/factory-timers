@@ -64,6 +64,9 @@ function makeStore() {
       async addSub(endpoint, room, sub) { await pool.query(`INSERT INTO subscriptions (endpoint,room,sub) VALUES ($1,$2,$3) ON CONFLICT (endpoint) DO UPDATE SET room=EXCLUDED.room, sub=EXCLUDED.sub`, [endpoint, room, sub]); },
       async removeSub(endpoint) { await pool.query("DELETE FROM subscriptions WHERE endpoint=$1", [endpoint]); },
       async addEvent(ev) { await pool.query(`INSERT INTO events (room,ts,by_op,action,timer_id,timer_name) VALUES ($1,$2,$3,$4,$5,$6)`, [ev.room, ev.ts, ev.by, ev.action, ev.timerId, ev.timerName]); },
+      async updateLastFinishedEvent(room, timerId, by) {
+        await pool.query(`UPDATE events SET by_op=$3 WHERE id = (SELECT id FROM events WHERE room=$1 AND timer_id=$2 AND action='finished' ORDER BY ts DESC LIMIT 1)`, [room, timerId, by]);
+      },
       async loadEvents(room, since, until) {
         const { rows } = await pool.query(
           `SELECT ts, by_op AS by, action, timer_id AS "timerId", timer_name AS "timerName" FROM events WHERE room=$1 AND ts>=$2 AND ts<=$3 ORDER BY ts ASC LIMIT 5000`,
@@ -95,6 +98,13 @@ function makeStore() {
     async addSub() { persist(); },
     async removeSub() { persist(); },
     async addEvent(ev) { events.push(ev); if (events.length > 5000) events = events.slice(-5000); persist(); },
+    async updateLastFinishedEvent(room, timerId, by) {
+      for (let i = events.length - 1; i >= 0; i--) {
+        const e = events[i];
+        if (e.room === room && e.timerId === timerId && e.action === "finished") { e.by = by; break; }
+      }
+      persist();
+    },
     async loadEvents(room, since, until) {
       return events.filter((e) => e.room === room && e.ts >= since && e.ts <= until)
         .map((e) => ({ ts: e.ts, by: e.by, action: e.action, timerId: e.timerId, timerName: e.timerName }));
@@ -123,7 +133,7 @@ function pushTimerLog(data, by, action, ts) {
 const clients = new Map();
 function roomTimers(room) { if (!timers[room]) timers[room] = {}; return timers[room]; }
 function statePayload(room) {
-  return `data: ${JSON.stringify({ type: "state", timers: roomTimers(room), count: counters[room] || 0, serverTime: Date.now() })}\n\n`;
+  return `data: ${JSON.stringify({ type: "state", timers: roomTimers(room), count: counters[room] || 0, turn: meta[`turn:${room}`] || null, serverTime: Date.now() })}\n\n`;
 }
 function broadcast(room) {
   const set = clients.get(room);
@@ -157,6 +167,8 @@ async function scanEnds() {
       if (t.state === "running" && t.endAt && t.endAt <= now) {
         const by = t.startedBy || "—";
         t.state = "done"; t.remaining = 0; t.endAt = null;
+        t.finishedBy = t.startedBy || null;
+        t.needsAttrib = true;   // ask "who made it?" on the phones
         pushTimerLog(t, by, "finished", now);
         counters[room] = (counters[room] || 0) + 1;
         try { await store.saveTimer(room, id, t); await store.setCounter(room, counters[room]); } catch (e) { console.error("persist end:", e.message); }
@@ -283,6 +295,7 @@ const server = http.createServer(async (req, res) => {
         const action = msg.action || "edited";
         const data = Object.assign({}, rt[msg.id], msg.patch || {});
         if (action === "started") data.startedBy = by;
+        data.needsAttrib = false;   // a manual action clears any pending "who made it?"
         pushTimerLog(data, by, action, ts);
         rt[msg.id] = data;
         await store.saveTimer(room, msg.id, data);
@@ -296,6 +309,18 @@ const server = http.createServer(async (req, res) => {
         counters[room] = 0;
         await store.setCounter(room, 0);
         await recordEvent(room, ts, by, "reset count", "", "Parts counter");
+      } else if (msg.op === "attribute" && msg.id) {
+        // "who made this finished part?" → credit them, set whose turn is next
+        const t = rt[msg.id];
+        if (t) {
+          t.finishedBy = by; t.needsAttrib = false; t.lastBy = by;
+          if (Array.isArray(t.log)) { const fe = t.log.find((e) => e.action === "finished"); if (fe) fe.by = by; }
+          await store.saveTimer(room, msg.id, t);
+          await store.updateLastFinishedEvent(room, msg.id, by);
+          const next = by === "Alon" ? "Aviv" : "Alon";
+          meta[`turn:${room}`] = next;
+          await store.saveMeta(`turn:${room}`, next);
+        }
       } else {
         res.writeHead(400).end("bad op"); return;
       }

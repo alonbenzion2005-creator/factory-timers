@@ -58,7 +58,7 @@ function makeLocal() {
           offset = msg.serverTime - Date.now();
           setOnline(true);
         }
-        if (msg.type === "state") cb(msg.timers || {}, { count: msg.count || 0 });
+        if (msg.type === "state") cb(msg.timers || {}, { count: msg.count || 0, turn: msg.turn || null });
       };
       return () => es.close();
     },
@@ -66,6 +66,7 @@ function makeLocal() {
     update(room, id, patch, meta) { return post(room, { op: "update", id, patch, by: meta?.by, action: meta?.action }); },
     remove(room, id, meta) { return post(room, { op: "remove", id, by: meta?.by, action: meta?.action }); },
     resetCount(room, meta) { return post(room, { op: "resetCount", by: meta?.by }); },
+    attribute(room, id, meta) { return post(room, { op: "attribute", id, by: meta?.by }); },
     log(room, since, until) {
       return fetch(`/log?room=${encodeURIComponent(room)}&since=${since}&until=${until}`).then((r) => r.json());
     },

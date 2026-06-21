@@ -79,8 +79,10 @@ function subscribe() {
   unsubscribe = be.subscribe(room, (data, extra) => {
     timers = data || {};
     if (extra && typeof extra.count === "number") setCount(extra.count);
+    if (extra) setTurn(extra.turn);
     render();
     maybeRefreshLog();
+    checkPending();
   });
 }
 
@@ -102,6 +104,16 @@ if (supportsLog) {
 /* Time-of-day helper for logs */
 function fmtClock(ts) {
   return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+/* Whose turn is next (set by answering the finish prompt) */
+const nextupEl = document.getElementById("nextup");
+const nextupNameEl = document.getElementById("nextupName");
+function setTurn(name) {
+  if (!supportsLog || !name) { nextupEl.classList.add("hidden"); return; }
+  nextupEl.classList.remove("hidden");
+  nextupEl.style.setProperty("--nu", opColor(name));
+  nextupNameEl.textContent = name;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -500,6 +512,59 @@ if (supportsLog) {
   logModal.addEventListener("click", (e) => { if (e.target === logModal) { logOpen = false; logModal.classList.add("hidden"); } });
   logPrev.addEventListener("click", () => { logDay -= DAY; loadDayLog(); });
   logNext.addEventListener("click", () => { if (logDay < startOfDay(Date.now())) { logDay += DAY; loadDayLog(); } });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Glowing "who made this part?" prompt at every timer end.
+   The answer credits the part AND decides whose turn is next.
+   ────────────────────────────────────────────────────────────── */
+const finishModal = document.getElementById("finishModal");
+const finishPart = document.getElementById("finishPart");
+const finishOps = document.getElementById("finishOps");
+let finishShownKey = null;            // which finish instance is on screen
+const dismissed = new Set();          // finish instances skipped this session
+
+const finishKey = (id, t) => `${id}:${t.lastAt || 0}`;
+
+if (supportsLog) {
+  OPERATORS.forEach((name) => {
+    const b = document.createElement("button");
+    b.className = "finish-op";
+    b.style.setProperty("--oc", opColor(name));
+    b.innerHTML = `<span class="dot"></span>${name}`;
+    b.addEventListener("click", () => answerFinish(name));
+    finishOps.appendChild(b);
+  });
+  document.getElementById("finishSkip").addEventListener("click", () => {
+    if (finishShownKey) dismissed.add(finishShownKey);
+    hideFinish();
+  });
+}
+
+let finishForId = null;
+function showFinishPrompt(id) {
+  const t = timers[id];
+  if (!t) return;
+  finishForId = id;
+  finishShownKey = finishKey(id, t);
+  finishPart.textContent = t.name || "Timer";
+  finishPart.style.color = t.color || "#fff";
+  finishModal.classList.remove("hidden");
+}
+function hideFinish() { finishModal.classList.add("hidden"); finishForId = null; finishShownKey = null; checkPending(); }
+function answerFinish(name) {
+  if (finishForId) be.attribute(room, finishForId, { by: name });
+  hideFinish();
+}
+
+// Show the prompt for any finished-but-unattributed timer (one at a time).
+function checkPending() {
+  if (!supportsLog || finishForId) return;
+  const id = sortedIds().find((id) => {
+    const t = timers[id];
+    return t && t.state === "done" && t.needsAttrib && !dismissed.has(finishKey(id, t));
+  });
+  if (id) showFinishPrompt(id);
 }
 
 /* ──────────────────────────────────────────────────────────────

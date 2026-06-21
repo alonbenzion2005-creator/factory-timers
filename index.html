@@ -66,6 +66,11 @@
     <button id="logBtn" class="daylog-btn" title="See everything that happened today">📋 Day log</button>
   </div>
 
+  <div id="nextup" class="nextup hidden">
+    <span class="nextup-label">Next up</span>
+    <span id="nextupName" class="nextup-name">—</span>
+  </div>
+
   <main id="grid" class="grid"></main>
 
   <div id="empty" class="empty hidden">
@@ -112,6 +117,18 @@
         <div class="spacer"></div>
         <button id="saveBtn" class="btn btn-primary">Save</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Glowing "who made this part?" prompt at every timer end -->
+  <div id="finishModal" class="finish-overlay hidden">
+    <div class="finish-card">
+      <div class="finish-emoji">✅</div>
+      <div class="finish-sub">Part finished</div>
+      <div id="finishPart" class="finish-part">—</div>
+      <div class="finish-q">Who made it?</div>
+      <div id="finishOps" class="finish-ops"></div>
+      <button id="finishSkip" class="finish-skip">skip</button>
     </div>
   </div>
 
