@@ -1,0 +1,18 @@
+name: keep-alive
+
+# Pings the Render app so the free instance doesn't spin down. While it's awake,
+# the server can detect timer endings and send background push notifications.
+# Note: GitHub's scheduler can be delayed under load, so for rock-solid uptime
+# an external monitor (e.g. UptimeRobot, 5-min interval) is more reliable.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes
+  workflow_dispatch:          # lets you run it manually from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: curl -fsS --max-time 60 https://factory-timers.onrender.com/health || true

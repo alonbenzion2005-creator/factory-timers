@@ -219,6 +219,23 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Diagnostics
+  if (url.pathname === "/debug/subs") {
+    const byRoom = {};
+    for (const { room } of Object.values(subs)) byRoom[room] = (byRoom[room] || 0) + 1;
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ pushEnabled, total: Object.keys(subs).length, byRoom }));
+    return;
+  }
+  if (url.pathname === "/debug/test-push" && req.method === "POST") {
+    let msg = {}; try { msg = await readBody(req); } catch {}
+    const room = msg.room || "factory";
+    await sendPush(room, "Test alert ✅");
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ sent: Object.values(subs).filter((s) => s.room === room).length }));
+    return;
+  }
+
   if (url.pathname === "/events") {
     const room = url.searchParams.get("room") || "factory";
     res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" });
